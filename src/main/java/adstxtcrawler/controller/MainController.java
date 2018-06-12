@@ -1,5 +1,8 @@
-package adstxtcrawler;
+package adstxtcrawler.controller;
 
+import adstxtcrawler.models.Publisher;
+import adstxtcrawler.util.Crawler;
+import adstxtcrawler.models.Record;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
@@ -22,15 +25,19 @@ public class MainController {
             
             ConnectionSource connectionSource = new JdbcConnectionSource(DATABASE_URL, DB_USER, DB_PW);
             TableUtils.createTableIfNotExists(connectionSource, Record.class);
+            TableUtils.createTableIfNotExists(connectionSource, Publisher.class);
+            
             Crawler crawler = new Crawler(connectionSource);
             crawler.loadPublishers();
-            Queue<String> publisher = crawler.getPublishers();
-            crawler.parseAdsTxt(publisher.element());
+            crawler.setupDatabase();
+            
+            
+            Queue<String> publishers = crawler.getPublishers();
+            crawler.parseAdsTxt(publishers.element());
 
             // Has a shutdown hook, not needed
             // conn.close();
         } catch (SQLException e) {
-            System.out.println("SHOULDT BE THIS WAY");
             e.printStackTrace();
         }
     }
