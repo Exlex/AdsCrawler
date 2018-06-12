@@ -18,8 +18,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Crawler {
 
@@ -66,7 +64,15 @@ public class Crawler {
     public void parseAdsTxt(String urlString) {
         try {
             URL url = new URL(urlString);
-            Publisher pub = findPublisher(url.getHost());
+            String pubName = getHostName(url.getHost());
+            Publisher pub = findPublisher(pubName);
+            if (pub == null) {
+                System.out.println("No publisher found");
+                pub = new Publisher(pubName);
+                publisherDao.create(pub);
+                System.out.println("Saved publisher is: " + pub.getName());
+            }
+
             // set headers
             URLConnection connection = url.openConnection();
             connection.setRequestProperty("Accept", "text/plain");
@@ -90,20 +96,21 @@ public class Crawler {
         }
     }
 
+    public String getHostName(String pubName) {
+        return pubName.startsWith("www.") ? pubName.substring(4) : pubName;
+    }
+
     public Publisher findPublisher(String pubName) {
         try {
             QueryBuilder<Publisher, String> queryBuilder = publisherDao.queryBuilder();
             queryBuilder.where().eq("name", pubName);
             PreparedQuery<Publisher> preparedQuery = queryBuilder.prepare();
             List<Publisher> publisherList = publisherDao.query(preparedQuery);
-            if(publisherList.size() == 1){
+            if (publisherList.size() == 1) {
+                //System.out.println("Publisher found!");
                 return publisherList.get(0);
             } else {
-                System.out.println("No publisher found");
-                Publisher pub = new Publisher(pubName);
-                publisherDao.create(pub);
-                System.out.println("Saved publisher is: " + pub.getName());
-                return pub;
+                return null;
             }
         } catch (SQLException e) {
             e.printStackTrace();

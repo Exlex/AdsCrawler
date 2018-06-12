@@ -1,6 +1,7 @@
 .gradle
 /build/
 .nb-gradle/
+src/main/resources/storage.trace.db
 
 # Ignore Gradle GUI config
 gradle-app.setting

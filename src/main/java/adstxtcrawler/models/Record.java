@@ -1,5 +1,6 @@
 package adstxtcrawler.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 
@@ -8,6 +9,7 @@ public class Record {
 
     @DatabaseField(generatedId = true)
     private int id;
+    @JsonIgnore
     @DatabaseField(foreign = true, foreignAutoRefresh = true)
     private Publisher publisher;
     @DatabaseField

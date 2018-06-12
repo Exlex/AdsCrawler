@@ -8,7 +8,7 @@ public class Validator {
     public Record validateRecord(Publisher pub, String r){
         String recordString = "", exchange, pubId, relationship, authId;
         String[] splitRecord;
-        System.out.println("Validating: " + r);
+        //System.out.println("Validating: " + r);
         
         // Handle blank line
         if (r.isEmpty()){
@@ -21,7 +21,7 @@ public class Validator {
                 return null; // whole line is a comment, make Crawler skip it
             }
             recordString = r.substring(0, r.indexOf("#")); // remove inline comments
-            System.out.println("Record without comment: " + recordString);
+            //System.out.println("Record without comment: " + recordString);
             
         } else {
             recordString = r;
@@ -30,7 +30,7 @@ public class Validator {
         // split on comma to get each field
         splitRecord = recordString.split(",");
         if(splitRecord.length < 3){
-            System.out.println("Too little fields in this record");
+            //System.out.println("Too little fields in this record");
             return null;
         }
         
