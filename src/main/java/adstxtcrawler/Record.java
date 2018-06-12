@@ -5,6 +5,7 @@ import com.j256.ormlite.table.DatabaseTable;
 
 @DatabaseTable(tableName = "records")
 public class Record {
+
     @DatabaseField(generatedId = true)
     private int id;
     @DatabaseField
@@ -58,6 +59,5 @@ public class Record {
     public void setAuthId(String authId) {
         this.authId = authId;
     }
-    
-    
+
 }
