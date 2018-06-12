@@ -1,0 +1,5 @@
+http://www.cnn.com/ads.txt
+http://www.gizmodo.com/ads.txt
+http://www.nytimes.com/ads.txt
+https://www.bloomberg.com/ads.txt
+https://wordpress.com/ads.txt
