@@ -7,13 +7,12 @@ import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.stmt.PreparedQuery;
 import com.j256.ormlite.stmt.QueryBuilder;
 import com.j256.ormlite.support.ConnectionSource;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -22,6 +21,7 @@ import java.util.Scanner;
 public class Crawler {
 
     private final String PUBLISHERS_PATH = "src/main/resources/publishers.txt";
+    private final long WEEK_IN_MS = 86400000 * 7; // DAY_IN_MS * 7
     private Queue<String> publishers;
     private Scanner scanner;
     private Validator validator;
@@ -35,7 +35,7 @@ public class Crawler {
         validator = new Validator();
     }
 
-    public void setupDatabase() {
+    public void setupDatabaseAccess() {
         // setup database access objects
         try {
             recordDao = DaoManager.createDao(connectionSource, Record.class);
@@ -55,7 +55,7 @@ public class Crawler {
             while (scanner.hasNextLine()) {
                 line = scanner.nextLine();
                 if (line != null) {
-                    publishers.add(line);
+                    publishers.add(line.trim());
                     System.out.println("Added: " + line);
                 }
 
@@ -66,21 +66,30 @@ public class Crawler {
         }
     }
 
+    /* Parses the ads.txt of a given url */
     public void parseAdsTxt(String urlString) {
         try {
             URL url = new URL(urlString);
+            URLConnection connection = url.openConnection();
+            connection.setRequestProperty("Accept", "text/plain");
+
+            // Cache time
+            long expires = connection.getExpiration();
+            if (expires == 0) {  // expires header missing, default 7 days
+                expires = new Date().getTime() + WEEK_IN_MS;
+            }
+
             String pubName = getHostName(url.getHost());
             Publisher pub = findPublisher(pubName);
             if (pub == null) {
-                System.out.println("No publisher found");
                 pub = new Publisher(pubName);
+                pub.setExpiresAt(expires);
                 publisherDao.create(pub);
-                System.out.println("Saved publisher is: " + pub.getName());
+            } else {
+                pub.setExpiresAt(expires);
+                publisherDao.update(pub);
             }
-
-            // set headers
-            URLConnection connection = url.openConnection();
-            connection.setRequestProperty("Accept", "text/plain");
+            System.out.println(pubName + " expires at: " + new Date(pub.getExpiresAt()));
 
             scanner = new Scanner(connection.getInputStream());
 
@@ -89,10 +98,9 @@ public class Crawler {
                 line = scanner.nextLine();
                 Record record = validator.validateRecord(pub, line);
                 if (record == null) {
-                    System.out.println("Line discaded: " + line);
+                    //System.out.println("Line discaded: " + line);
                     continue;// invalid or malformed line, skip it
                 }
-                //System.out.println("Valid record");
                 recordDao.create(record);
             }
             scanner.close();
@@ -101,7 +109,7 @@ public class Crawler {
         }
     }
 
-    /* Cleanup pubName when */
+    /* Cleanup pubName after url.getHost() */
     public String getHostName(String pubName) {
         return pubName.startsWith("www.") ? pubName.substring(4) : pubName;
     }
@@ -114,7 +122,6 @@ public class Crawler {
             PreparedQuery<Publisher> preparedQuery = queryBuilder.prepare();
             List<Publisher> publisherList = publisherDao.query(preparedQuery);
             if (publisherList.size() == 1) {
-                //System.out.println("Publisher found!");
                 return publisherList.get(0);
             } else {
                 return null;

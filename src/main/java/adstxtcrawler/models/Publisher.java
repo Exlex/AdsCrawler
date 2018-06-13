@@ -4,6 +4,7 @@ import com.j256.ormlite.dao.ForeignCollection;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.field.ForeignCollectionField;
 import com.j256.ormlite.table.DatabaseTable;
+import java.util.Date;
 
 @DatabaseTable(tableName = "publishers")
 public class Publisher {
@@ -14,9 +15,11 @@ public class Publisher {
     private String name;
     @ForeignCollectionField(eager = false)
     private ForeignCollection<Record> records;
+    @DatabaseField
+    private long expiresAt;
 
     public Publisher() {
-
+        
     }
 
     public int getId() {
@@ -45,6 +48,14 @@ public class Publisher {
 
     public void setRecords(ForeignCollection<Record> records) {
         this.records = records;
+    }
+
+    public long getExpiresAt() {
+        return expiresAt;
+    }
+
+    public void setExpiresAt(long expiresAt) {
+        this.expiresAt = expiresAt;
     }
 
 }
