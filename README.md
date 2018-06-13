@@ -12,4 +12,6 @@ Built with Gradle using:
 -Jackson JSON
 
 
-Build and run the program. To access the data use localhost:4567/?name={publisher name} ex: localhost:4567/?name=bloomberg.com
+Build and run the program. To access the data use localhost:4567/?name={publisher name} 
+
+ex: localhost:4567/?name=bloomberg.com
