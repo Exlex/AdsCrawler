@@ -19,9 +19,10 @@ public class MainController {
     private static final String DATABASE_URL = "jdbc:h2:./src/main/resources/storage";
     private static final String DB_USER = "admin";
     private static final String DB_PW = "";
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private static ObjectMapper mapper;
 
     public static void main(String[] args) {
+        mapper = new ObjectMapper();
         try {
             ConnectionSource connectionSource = new JdbcConnectionSource(DATABASE_URL, DB_USER, DB_PW);
             TableUtils.createTableIfNotExists(connectionSource, Record.class);
@@ -36,7 +37,8 @@ public class MainController {
                 String adsUrl = publishers.poll();
                 crawler.parseAdsTxt(adsUrl);
             }
-
+            
+            // ex: localhost:4567?name=cnn.com
             get(URL_MAPPING, (Request request, Response response) -> {
                 String pubName = request.queryParams("name");
                 if (pubName != null) {
@@ -44,7 +46,7 @@ public class MainController {
                     Publisher publisher = crawler.findPublisher(pubName);
                     if (publisher != null) {
                         response.type("application/json");
-                        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(publisher.getRecordList());
+                        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(publisher.getRecords());
                     }
                     System.out.println("Publisher " + pubName + " was NULL");
                 }

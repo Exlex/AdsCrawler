@@ -2,90 +2,84 @@ package adstxtcrawler.util;
 
 import adstxtcrawler.models.Publisher;
 import adstxtcrawler.models.Record;
+import org.apache.commons.validator.routines.UrlValidator;
 
 public class Validator {
-    
-    public Record validateRecord(Publisher pub, String r){
-        String recordString = "", exchange, pubId, relationship, authId;
+
+    public Record validateRecord(Publisher pub, String r) {
+        String recordString, exchange, pubId, relationship, authId;
         String[] splitRecord;
-        //System.out.println("Validating: " + r);
-        
+
         // Handle blank line
-        if (r.isEmpty()){
+        if (r.isEmpty()) {
             return null;
         }
-        
+
         // Handle comments
-        if(r.contains("#")){
-            if(r.indexOf("#") == 0){
-                return null; // whole line is a comment, make Crawler skip it
+        if (r.contains("#")) {
+            if (r.indexOf("#") == 0) {
+                return null; // whole line is a comment, skip it
             }
             recordString = r.substring(0, r.indexOf("#")); // remove inline comments
-            //System.out.println("Record without comment: " + recordString);
-            
         } else {
             recordString = r;
         }
-        
+
         // split on comma to get each field
         splitRecord = recordString.split(",");
-        if(splitRecord.length < 3){
-            //System.out.println("Too little fields in this record");
+        if (splitRecord.length < 3) {
             return null;
         }
-        
-        for(String field: splitRecord){
-            field = field.trim();
-        }
-        exchange = splitRecord[0];
-        pubId = splitRecord[1];
-        relationship = splitRecord[2];
-        if(splitRecord.length == 4){
-            authId = splitRecord[3];
-            if(validateFields(exchange, pubId, relationship, authId)){
+
+        exchange        = splitRecord[0].trim();
+        pubId           = splitRecord[1].trim();
+        relationship    = splitRecord[2].trim();
+        if (splitRecord.length == 4) {
+            authId = splitRecord[3].trim();
+            if (validateFields(exchange, pubId, relationship, authId)) {
                 return new Record(pub, exchange, pubId, relationship, authId);
             }
         } else {
-            if(validateFields(exchange, pubId, relationship)){
+            if (validateFields(exchange, pubId, relationship)) {
                 return new Record(pub, exchange, pubId, relationship);
             }
         }
-
         return null;
     }
 
-    private boolean validateFields(String exchange, String pubId, String relationship){
+    private boolean validateFields(String exchange, String pubId, String relationship) {
         boolean valid = true;
-        if(!validateExchangeDomain(exchange)){
+        if (!validateExchangeDomain(exchange)) {
             valid = false;
-        } else if(!validatePublisherId(pubId)){
+        } else if (!validatePublisherId(pubId)) {
             valid = false;
-        } else if(!validateRelationship(relationship)){
+        } else if (!validateRelationship(relationship)) {
             valid = false;
         }
         return valid;
     }
-    
-    private boolean validateFields(String exchange, String pubId, String relationship, String authId){
-        if(validateFields(exchange, pubId, relationship)){
+
+    private boolean validateFields(String exchange, String pubId, String relationship, String authId) {
+        if (validateFields(exchange, pubId, relationship)) {
             return validateAuthId(authId);
         }
         return false;
     }
-    
-    private boolean validateExchangeDomain(String exchange){
-        return true;
+
+    private boolean validateExchangeDomain(String exchange) {
+        UrlValidator uv = new UrlValidator();
+        return uv.isValid("https://" + exchange) && exchange.length() > 2;
     }
-    
-    private boolean validatePublisherId(String pubId){
-        return true;
+
+    private boolean validatePublisherId(String pubId) {
+        return pubId.length() > 0;
     }
-    
-    private boolean validateRelationship(String relationship){
-        return true;
+
+    private boolean validateRelationship(String relationship) {
+        return relationship.equalsIgnoreCase("DIRECT") | relationship.equalsIgnoreCase("RESELLER");
     }
-    
-    private boolean validateAuthId(String authId){
+
+    private boolean validateAuthId(String authId) {
         return true;
     }
 }

@@ -36,7 +36,7 @@ public class Crawler {
     }
 
     public void setupDatabase() {
-        // setup database
+        // setup database access objects
         try {
             recordDao = DaoManager.createDao(connectionSource, Record.class);
             publisherDao = DaoManager.createDao(connectionSource, Publisher.class);
@@ -45,17 +45,22 @@ public class Crawler {
         }
     }
 
+    /* Reads in a list of publishers from resources/publishers.txt into Queue*/
     public void loadPublishers() {
         try {
             File publishersFile = new File(PUBLISHERS_PATH);
-            BufferedReader br = new BufferedReader(new FileReader(publishersFile));
+            scanner = new Scanner(publishersFile);
             String line = "";
 
-            while ((line = br.readLine()) != null) {
-                publishers.add(line);
-                System.out.println("Added: " + line);
+            while (scanner.hasNextLine()) {
+                line = scanner.nextLine();
+                if (line != null) {
+                    publishers.add(line);
+                    System.out.println("Added: " + line);
+                }
+
             }
-            br.close();
+            scanner.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -87,7 +92,7 @@ public class Crawler {
                     System.out.println("Line discaded: " + line);
                     continue;// invalid or malformed line, skip it
                 }
-                System.out.println("Valid record");
+                //System.out.println("Valid record");
                 recordDao.create(record);
             }
             scanner.close();
@@ -96,10 +101,12 @@ public class Crawler {
         }
     }
 
+    /* Cleanup pubName when */
     public String getHostName(String pubName) {
         return pubName.startsWith("www.") ? pubName.substring(4) : pubName;
     }
 
+    /* Searches DB for the Publisher object by name */
     public Publisher findPublisher(String pubName) {
         try {
             QueryBuilder<Publisher, String> queryBuilder = publisherDao.queryBuilder();
@@ -118,10 +125,7 @@ public class Crawler {
         }
     }
 
-    public void parseRecord(String recordString) {
-
-    }
-
+    /* GETTERS AND SETTERS */
     public Queue<String> getPublishers() {
         return publishers;
     }
