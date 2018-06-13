@@ -10,3 +10,6 @@ Built with Gradle using:
 -Sparkjava for the server/HTTP endpoint
 
 -Jackson JSON
+
+
+Build and run the program. To access the data use localhost:4567/?name={publisher name} ex: localhost:4567/?name=bloomberg.com
