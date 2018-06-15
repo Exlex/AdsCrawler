@@ -6,7 +6,7 @@ import org.apache.commons.validator.routines.UrlValidator;
 
 public class Validator {
 
-    public Record validateRecord(Publisher pub, String r) {
+    public static Record validateRecord(Publisher pub, String r) {
         String recordString, exchange, pubId, relationship, authId;
         String[] splitRecord;
 
@@ -47,7 +47,7 @@ public class Validator {
         return null;
     }
 
-    private boolean validateFields(String exchange, String pubId, String relationship) {
+    private static boolean validateFields(String exchange, String pubId, String relationship) {
         boolean valid = true;
         if (!validateExchangeDomain(exchange)) {
             valid = false;
@@ -59,27 +59,27 @@ public class Validator {
         return valid;
     }
 
-    private boolean validateFields(String exchange, String pubId, String relationship, String authId) {
+    private static boolean validateFields(String exchange, String pubId, String relationship, String authId) {
         if (validateFields(exchange, pubId, relationship)) {
             return validateAuthId(authId);
         }
         return false;
     }
 
-    private boolean validateExchangeDomain(String exchange) {
+    private static boolean validateExchangeDomain(String exchange) {
         UrlValidator uv = new UrlValidator();
         return uv.isValid("https://" + exchange) && exchange.length() > 2;
     }
 
-    private boolean validatePublisherId(String pubId) {
+    private static boolean validatePublisherId(String pubId) {
         return pubId.length() > 0;
     }
 
-    private boolean validateRelationship(String relationship) {
+    private static boolean validateRelationship(String relationship) {
         return relationship.equalsIgnoreCase("DIRECT") | relationship.equalsIgnoreCase("RESELLER");
     }
 
-    private boolean validateAuthId(String authId) {
+    private static boolean validateAuthId(String authId) {
         return true;
     }
 }

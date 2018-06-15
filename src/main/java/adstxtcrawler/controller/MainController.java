@@ -1,84 +1,69 @@
 package adstxtcrawler.controller;
 
 import adstxtcrawler.models.Publisher;
-import adstxtcrawler.util.Crawler;
+import adstxtcrawler.threads.Crawler;
 import adstxtcrawler.models.Record;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.j256.ormlite.jdbc.JdbcConnectionSource;
+import adstxtcrawler.util.Endpoint;
+import adstxtcrawler.threads.PublisherManager;
+import com.j256.ormlite.dao.DaoManager;
+import com.j256.ormlite.jdbc.JdbcPooledConnectionSource;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
 import java.sql.SQLException;
-import java.util.Date;
-import java.util.Queue;
-import spark.Request;
-import spark.Response;
-import static spark.Spark.get;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 
 public class MainController {
 
-    private static final String URL_MAPPING = "/";
+    /* Properties */
     private static final String DATABASE_URL = "jdbc:h2:./src/main/resources/storage";
     private static final String DB_USER = "admin";
     private static final String DB_PW = "";
-    private static ObjectMapper mapper;
+    private static final int MAX_CRAWLER_THREADS = 10;
+    private static final int QUEUE_MAX_SIZE = 100;
 
+    private static BlockingQueue<String> publishersToProcess;
+    private static ConnectionSource connectionSource;
+    
     public static void main(String[] args) {
-        mapper = new ObjectMapper();
+        initDb();
+        publishersToProcess = new LinkedBlockingDeque<>(QUEUE_MAX_SIZE);
+
+        PublisherManager publisherManager = new PublisherManager(connectionSource, publishersToProcess);
+        publisherManager.run();
+        
+        Endpoint endpoint = new Endpoint();
+        endpoint.serve(connectionSource);
+        System.out.println("Should be false: " + publisherManager.isDone());
+        while (!publisherManager.isDone() || publishersToProcess.size() > 0) {
+            System.out.println("There are: " + publishersToProcess.size() + " publishers left to process.");
+            try {
+                Crawler crawler = new Crawler(connectionSource);
+                String adsUrl = publishersToProcess.take();
+                crawler.setTargetUrl(adsUrl);
+                crawler.run();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static void initDb() {
         try {
             // DB init
-            ConnectionSource connectionSource = new JdbcConnectionSource(DATABASE_URL, DB_USER, DB_PW);
-            TableUtils.createTableIfNotExists(connectionSource, Record.class);
-            TableUtils.createTableIfNotExists(connectionSource, Publisher.class);
-            TableUtils.clearTable(connectionSource, Record.class);
-            TableUtils.clearTable(connectionSource, Publisher.class);
+            connectionSource = new JdbcPooledConnectionSource(DATABASE_URL, DB_USER, DB_PW);
 
-            // Crawler init
-            Crawler crawler = new Crawler(connectionSource);
-            crawler.loadPublishers();
-            crawler.setupDatabaseAccess();
+            TableUtils.dropTable(connectionSource, Record.class, true);
+            TableUtils.dropTable(connectionSource, Publisher.class, true);
+            TableUtils.createTable(connectionSource, Record.class);
+            TableUtils.createTable(connectionSource, Publisher.class);
 
-            // Loading publisher list into queue
-            Queue<String> publishers = crawler.getPublishers();
-            while (publishers.size() > 0) {
-                String adsUrl = publishers.poll();
-                crawler.parseAdsTxt(adsUrl);
-            }
-
-            // HTTP Endpoint
-            // ex: localhost:4567?name=cnn.com
-            get(URL_MAPPING, (Request request, Response response) -> {
-                String pubName = request.queryParams("name");
-                if (pubName != null) {
-                    System.out.println("Query Param for publisher: " + pubName);
-                    Publisher publisher = crawler.findPublisher(pubName);
-
-                    if (publisher != null) {
-                        // Check if cache expired before serving
-                        if (isPublisherExpired(publisher.getExpiresAt())) {
-                            System.out.println("The publisher cache for " + publisher.getName() + " has expired. Refetching...");
-                            crawler.parseAdsTxt("https://" + publisher.getName());
-                        }
-                        // return the JSON
-                        response.type("application/json");
-                        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(publisher.getRecords());
-                    }
-                    System.out.println("Publisher " + pubName + " was NULL");
-                }
-
-                return "Spark out here";
-            });
-
-            // Has a shutdown hook, not needed
-            // conn.close();
+            // Create DAO, later fetched by lookupDao()
+            DaoManager.createDao(connectionSource, Record.class);
+            DaoManager.createDao(connectionSource, Publisher.class);
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    public static boolean isPublisherExpired(long pubExpTime) {
-        Date now = new Date();
-        System.out.println("Now its: " + now 
-                       + "\nExpires at: " + new Date(pubExpTime));
-        return now.getTime() > pubExpTime;
-    }
 }
