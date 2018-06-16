@@ -1,11 +1,10 @@
 package adstxtcrawler.util;
 
-import adstxtcrawler.controller.MainController;
 import adstxtcrawler.models.Publisher;
 import adstxtcrawler.threads.Crawler;
+import adstxtcrawler.threads.PublisherManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.j256.ormlite.support.ConnectionSource;
-import java.util.Date;
 import spark.Request;
 import spark.Response;
 import static spark.Spark.get;
@@ -31,10 +30,10 @@ public class Endpoint {
 
                 if (publisher != null) {
                     // Check if cache expired before serving
-                    if (isPublisherExpired(publisher.getExpiresAt())) {
+                    if (PublisherManager.isPublisherExpired(publisher.getExpiresAt())) {
                         System.out.println("The publisher cache for " + publisher.getName() + " has expired. Refetching...");
                         crawler.fetch("https://" + publisher.getName());
-                        crawler.run();
+                        crawler.run(); // done in same-thread because must wait for new info
                     }
                     // return the JSON
                     response.type("application/json");
@@ -45,13 +44,5 @@ public class Endpoint {
 
             return "Spark out here";
         });
-    }
-
-    /* Helper method */
-    public static boolean isPublisherExpired(long pubExpTime) {
-        Date now = new Date();
-        System.out.println("Now its: " + now
-                + "\nExpires at: " + new Date(pubExpTime));
-        return now.getTime() > pubExpTime;
     }
 }

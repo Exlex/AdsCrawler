@@ -10,12 +10,12 @@ import org.junit.Test;
 public class ValidatorTest {
 
     private Publisher pub;
-    private Record record;
 
     @Test
     public void testRecordValidation() {
         System.out.println("Running: testRecordValidation");
         String recordString;
+        Record record;
 
         recordString = "tremorhub.com, ug5m3, DIRECT, 1a4e959a1b50034a";
         record = Validator.validateRecord(pub, recordString);
@@ -46,6 +46,7 @@ public class ValidatorTest {
     public void testBadValidation() {
         System.out.println("Running: testBadRecordValidation");
         String badRecordString;
+        Record record;
         
         badRecordString = "tremorhub, ug5m3, DIRECT, 1a4e959a1b50034a";
         record = Validator.validateRecord(pub, badRecordString);
@@ -59,5 +60,7 @@ public class ValidatorTest {
         record = Validator.validateRecord(pub, badRecordString);
         assertNull(record);
     }
+    
+    
 
 }

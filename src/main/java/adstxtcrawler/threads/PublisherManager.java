@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Date;
 import java.util.concurrent.BlockingQueue;
 
 public class PublisherManager implements Runnable {
@@ -51,6 +52,13 @@ public class PublisherManager implements Runnable {
         }
     }
 
+    /* Helper method for endpoint*/
+    public static boolean isPublisherExpired(long pubExpTime) {
+        Date now = new Date();
+        System.out.println("Now its: " + now
+                + "\nExpires at: " + new Date(pubExpTime));
+        return now.getTime() > pubExpTime;
+    }
     
     /* GETTERS AND SETTERS */
     public boolean isDone() {
