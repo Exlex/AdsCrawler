@@ -14,9 +14,11 @@ public class PublisherManager implements Runnable {
     
     private static BufferedReader bufferedReader;
     private boolean done;
+    private long publisherCount;
     
     public PublisherManager(ConnectionSource connectionSource, BlockingQueue<String> publishers){
-        done = false;
+        this.done = false;
+        this.publisherCount = 0;
         this.publishersToProcess = publishers;
     }
     
@@ -40,6 +42,7 @@ public class PublisherManager implements Runnable {
                         System.out.println("Producer's 'to crawl' queue is full!");
                     }
                     System.out.println("Added: " + line);
+                    publisherCount++;
                 }
             }
             bufferedReader.close();
@@ -54,4 +57,8 @@ public class PublisherManager implements Runnable {
         return done;
     }
 
+    public long getPublisherCount() {
+        return publisherCount;
+    }
+    
 }

@@ -1,5 +1,6 @@
 package adstxtcrawler.threads;
 
+import adstxtcrawler.controller.MainController;
 import adstxtcrawler.models.Publisher;
 import adstxtcrawler.models.Record;
 import adstxtcrawler.util.Validator;
@@ -24,27 +25,35 @@ public class Crawler implements Runnable {
     private final Dao<Record, String> recordDao;
     private final Dao<Publisher, String> publisherDao;
     private final ConnectionSource connectionSource;
-    
-    private static BufferedReader bufferedReader; 
-    private String targetUrl;
+
+    private BufferedReader bufferedReader;
+    private static volatile boolean running = true;
 
     public Crawler(ConnectionSource cs) {
         this.connectionSource = cs;
         this.publisherDao = DaoManager.lookupDao(connectionSource, Publisher.class);
         this.recordDao = DaoManager.lookupDao(connectionSource, Record.class);
-        if(publisherDao == null)
-            System.out.println("pubDao null");
-        if(recordDao == null)
-            System.out.println("recordDao null");
     }
 
     @Override
     public void run() {
-        parseAdsTxt(targetUrl);
+        while (running) {
+            parseAdsTxt();
+        }
     }
 
-    /* Parses the ads.txt of a given url */
-    private void parseAdsTxt(String targetUrl) {
+    /* Parses the ads.txt next in queue */
+    private void parseAdsTxt() {
+        try {
+            String targetUrl = MainController.getPublishersToProcess().take();
+            fetch(targetUrl);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /* Fetches given url */
+    public void fetch(String targetUrl) {
         try {
             URL url = new URL(targetUrl);
             URLConnection connection = url.openConnection();
@@ -67,7 +76,7 @@ public class Crawler implements Runnable {
                 publisherDao.update(pub);
             }
             System.out.println(pubName + " expires at: " + new Date(pub.getExpiresAt()));
-            
+
             bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 
             String line;
@@ -98,7 +107,6 @@ public class Crawler implements Runnable {
             queryBuilder.where().eq("name", pubName);
             PreparedQuery<Publisher> preparedQuery = queryBuilder.prepare();
             List<Publisher> publisherList = publisherDao.query(preparedQuery);
-            System.out.println(publisherList.size());
             if (publisherList.size() == 1) {
                 return publisherList.get(0);
             } else {
@@ -109,9 +117,9 @@ public class Crawler implements Runnable {
             return null;
         }
     }
-
-    public void setTargetUrl(String targetUrl) {
-        this.targetUrl = targetUrl;
-    }
+    
+    public static void shutdown() {
+       running = false;
+   }
 
 }

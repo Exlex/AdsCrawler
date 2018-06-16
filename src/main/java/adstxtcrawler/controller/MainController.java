@@ -11,6 +11,8 @@ import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
 import java.sql.SQLException;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 
 public class MainController {
@@ -24,28 +26,25 @@ public class MainController {
 
     private static BlockingQueue<String> publishersToProcess;
     private static ConnectionSource connectionSource;
-    
+    private static Crawler[] crawlerPool;
+
     public static void main(String[] args) {
         initDb();
         publishersToProcess = new LinkedBlockingDeque<>(QUEUE_MAX_SIZE);
 
         PublisherManager publisherManager = new PublisherManager(connectionSource, publishersToProcess);
         publisherManager.run();
-        
+        initThreads();
+        // While not done scanning publishers.txt
+        // or not done processing the current list of ads.txt
+        while (!publisherManager.isDone() || publishersToProcess.size() > 0) {
+            // waiting for threads to finish
+        }
+        System.out.println("### DONE CRAWLING ###");
+        Crawler.shutdown();
+
         Endpoint endpoint = new Endpoint();
         endpoint.serve(connectionSource);
-        System.out.println("Should be false: " + publisherManager.isDone());
-        while (!publisherManager.isDone() || publishersToProcess.size() > 0) {
-            System.out.println("There are: " + publishersToProcess.size() + " publishers left to process.");
-            try {
-                Crawler crawler = new Crawler(connectionSource);
-                String adsUrl = publishersToProcess.take();
-                crawler.setTargetUrl(adsUrl);
-                crawler.run();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     private static void initDb() {
@@ -64,6 +63,19 @@ public class MainController {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    private static void initThreads() {
+        crawlerPool = new Crawler[MAX_CRAWLER_THREADS];
+        for (Crawler crawler : crawlerPool) {
+            crawler = new Crawler(connectionSource);
+            Thread t = new Thread(crawler);
+            t.start();
+        }
+    }
+
+    public static BlockingQueue<String> getPublishersToProcess() {
+        return publishersToProcess;
     }
 
 }

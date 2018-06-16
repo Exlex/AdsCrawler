@@ -33,7 +33,7 @@ public class Endpoint {
                     // Check if cache expired before serving
                     if (isPublisherExpired(publisher.getExpiresAt())) {
                         System.out.println("The publisher cache for " + publisher.getName() + " has expired. Refetching...");
-                        crawler.setTargetUrl("https://" + publisher.getName());
+                        crawler.fetch("https://" + publisher.getName());
                         crawler.run();
                     }
                     // return the JSON
