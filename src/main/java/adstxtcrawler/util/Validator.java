@@ -27,13 +27,13 @@ public class Validator {
 
         // split on comma to get each field
         splitRecord = recordString.split(",");
-        if (splitRecord.length < 3) {
+        if (splitRecord.length < 3 || splitRecord.length > 4) {
             return null;
         }
 
         exchange        = splitRecord[0].trim();
         pubId           = splitRecord[1].trim();
-        relationship    = splitRecord[2].trim();
+        relationship    = splitRecord[2].trim().toUpperCase();
         if (splitRecord.length == 4) {
             authId = splitRecord[3].trim();
             if (validateFields(exchange, pubId, relationship, authId)) {

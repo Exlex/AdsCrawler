@@ -34,13 +34,11 @@ public class MainController {
         publisherManager.run();
         
         initThreads();
-        
-        // While not done scanning publishers.txt
-        // or not done processing the current list of ads.txt
         while (!publisherManager.isDone() || publishersToProcess.size() > 0) {
-            // waiting for threads to finish
+            // waiting for threads to finish crawling
+            // TODO: Optimize this using ExecutorService and a thread pool
         }
-        Crawler.shutdown();
+        Crawler.shutdown(); // will wait for execution to end before quitting
 
         // Open up the HTTP endpoint
         Endpoint endpoint = new Endpoint();
@@ -52,6 +50,8 @@ public class MainController {
             // DB init
             connectionSource = new JdbcPooledConnectionSource(DATABASE_URL, DB_USER, DB_PW);
 
+            // CAN BE MODIFIED LATER AT PRODUCTION TIME
+            // TO NOT REDROP TABLES.
             TableUtils.dropTable(connectionSource, Record.class, true);
             TableUtils.dropTable(connectionSource, Publisher.class, true);
             TableUtils.createTable(connectionSource, Record.class);

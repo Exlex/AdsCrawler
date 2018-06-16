@@ -45,6 +45,8 @@ public class Crawler implements Runnable {
     /* Parses the ads.txt next in queue */
     private void parseAdsTxt() {
         try {
+            //take() makes thread pause and wait until queue has an item
+            // CONSUMER
             String targetUrl = MainController.getPublishersToProcess().take();
             fetch(targetUrl);
         } catch (InterruptedException e) {
@@ -55,16 +57,18 @@ public class Crawler implements Runnable {
     /* Fetches given url */
     public void fetch(String targetUrl) {
         try {
+            // Open URL Connection with proper headers
             URL url = new URL(targetUrl);
             URLConnection connection = url.openConnection();
             connection.setRequestProperty("Accept", "text/plain");
 
-            // Cache time
+            // Cache time calculation
             long expires = connection.getExpiration();
             if (expires == 0) {  // expires header missing, default 7 days
                 expires = new Date().getTime() + WEEK_IN_MS;
             }
 
+            // See if publisher already exists in DB (for cache purposes)
             String pubName = getHostName(url.getHost());
             Publisher pub = findPublisher(pubName);
             if (pub == null) {
@@ -77,8 +81,8 @@ public class Crawler implements Runnable {
             }
             System.out.println(pubName + " expires at: " + new Date(pub.getExpiresAt()));
 
+            // Process ads.txt record by record into the db
             bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-
             String line;
             while ((line = bufferedReader.readLine()) != null) {
                 Record record = Validator.validateRecord(pub, line);
