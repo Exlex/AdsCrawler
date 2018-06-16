@@ -118,6 +118,7 @@ public class Crawler implements Runnable {
         }
     }
     
+    /* Forces all running threads to shutdown */
     public static void shutdown() {
        running = false;
    }

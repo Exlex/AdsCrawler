@@ -11,8 +11,6 @@ import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
 import java.sql.SQLException;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 
 public class MainController {
@@ -34,15 +32,17 @@ public class MainController {
 
         PublisherManager publisherManager = new PublisherManager(connectionSource, publishersToProcess);
         publisherManager.run();
+        
         initThreads();
+        
         // While not done scanning publishers.txt
         // or not done processing the current list of ads.txt
         while (!publisherManager.isDone() || publishersToProcess.size() > 0) {
             // waiting for threads to finish
         }
-        System.out.println("### DONE CRAWLING ###");
         Crawler.shutdown();
 
+        // Open up the HTTP endpoint
         Endpoint endpoint = new Endpoint();
         endpoint.serve(connectionSource);
     }
