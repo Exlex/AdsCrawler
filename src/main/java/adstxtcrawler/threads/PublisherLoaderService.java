@@ -64,7 +64,7 @@ public class PublisherLoaderService implements Runnable {
                     }
                 }
             }
-            System.out.println("### PUBLISHER DONE, ADDING POISON PILL ###");
+            System.out.println("### PUBLISHER LOADING COMPLETE, ADDING POISON PILL ###");
             publishersToProcess.put(Crawler.getPill());
             bufferedReader.close();
         } catch (IOException e) {

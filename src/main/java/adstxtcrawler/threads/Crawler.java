@@ -1,6 +1,5 @@
 package adstxtcrawler.threads;
 
-import adstxtcrawler.controller.MainController;
 import adstxtcrawler.models.Publisher;
 import adstxtcrawler.models.Record;
 import adstxtcrawler.util.Validator;
@@ -18,19 +17,16 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
 
 public class Crawler implements Runnable {
 
-    private final long WEEK_IN_MS = 86400000 * 7; // DAY_IN_MS * 7
-
-    private final ConnectionSource connectionSource;
-
+    private static final String POISON_PILL = new String();
+    private static final long WEEK_IN_MS = 86400000 * 7; // DAY_IN_MS * 7
     private static Dao<Record, String> recordDao;
     private static Dao<Publisher, String> publisherDao;
-    private BufferedReader bufferedReader;
 
-    private static final String POISON_PILL = new String();
+    private final ConnectionSource connectionSource;
+    private BufferedReader bufferedReader;
 
     public Crawler(ConnectionSource cs) {
         this.connectionSource = cs;
@@ -50,7 +46,7 @@ public class Crawler implements Runnable {
                 if (targetUrl == POISON_PILL) { // comparing object not string value
                     queue.add(POISON_PILL); // for other threads waiting to take()
                     //System.out.println("##### Exiting crawler: " + Thread.currentThread().getName() + " #####");
-                    MainController.getLatch().countDown();
+                    Main.getLatch().countDown();
                     return;
                 }
                 fetch(targetUrl);
@@ -85,7 +81,7 @@ public class Crawler implements Runnable {
                 pub.setExpiresAt(expires);
                 publisherDao.update(pub);
             }
-            System.out.println(pubName + " expires at: " + new Date(pub.getExpiresAt()));
+            System.out.println("Added: " + pubName + " expires at: " + new Date(pub.getExpiresAt()));
 
             // Process ads.txt record by record into the db
             bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));

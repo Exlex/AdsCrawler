@@ -1,4 +1,4 @@
-package adstxtcrawler.controller;
+package adstxtcrawler.threads;
 
 import adstxtcrawler.models.Publisher;
 import adstxtcrawler.threads.Crawler;
@@ -14,7 +14,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class MainController {
+public class Main {
 
     /* Properties */
     private static final String DATABASE_URL = "jdbc:h2:./src/main/resources/storage";
@@ -30,7 +30,7 @@ public class MainController {
         initDb();
         PublisherLoaderService publisherLoaderService = new PublisherLoaderService(connectionSource);
 
-        ExecutorService publisherExecutor = Executors.newFixedThreadPool(1);
+        ExecutorService publisherExecutor = Executors.newSingleThreadExecutor();
         ExecutorService crawlerExecutor = Executors.newFixedThreadPool(MAX_CRAWLER_THREADS);
         latch = new CountDownLatch(MAX_CRAWLER_THREADS);
 

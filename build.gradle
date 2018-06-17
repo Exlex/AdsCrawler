@@ -4,7 +4,7 @@ sourceCompatibility = '1.8'
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
 if (!hasProperty('mainClass')) {
-    ext.mainClass = 'adstxtcrawler.controller.MainController'
+    ext.mainClass = 'adstxtcrawler.threads.Main'
 }
 
 repositories {
