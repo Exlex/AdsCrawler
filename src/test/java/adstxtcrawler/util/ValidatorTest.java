@@ -25,7 +25,7 @@ public class ValidatorTest {
         Assert.assertEquals("DIRECT", record.getRelationship());
         Assert.assertEquals("1a4e959a1b50034a", record.getAuthId());
 
-        recordString = "spotxchange.com,       184125,   RESELLER, 7842df1d2fe2db34";
+        recordString = "spotxchange.com,   \t    184125,   RESELLER, 7842df1d2fe2db34";
         record = Validator.validateRecord(pub, recordString);
         assertNotNull(record);
         Assert.assertEquals("spotxchange.com", record.getExchange());
@@ -53,6 +53,10 @@ public class ValidatorTest {
         assertNull(record);
         
         badRecordString = "tremorhub.com, ug4512s,, DIRECT, 1a4e959a1b50034a";
+        record = Validator.validateRecord(pub, badRecordString);
+        assertNull(record);
+        
+        badRecordString = "tremorhub.com, ug45\t12s,, DIRE\nCT, 1a4e959a1b50034a";
         record = Validator.validateRecord(pub, badRecordString);
         assertNull(record);
         

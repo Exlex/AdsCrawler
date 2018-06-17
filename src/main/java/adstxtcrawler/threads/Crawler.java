@@ -1,6 +1,5 @@
 package adstxtcrawler.threads;
 
-import adstxtcrawler.controller.MainController;
 import adstxtcrawler.models.Publisher;
 import adstxtcrawler.models.Record;
 import adstxtcrawler.util.Validator;
@@ -17,6 +16,8 @@ import java.net.URLConnection;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 
 public class Crawler implements Runnable {
 
@@ -27,34 +28,39 @@ public class Crawler implements Runnable {
     private final ConnectionSource connectionSource;
 
     private BufferedReader bufferedReader;
-    private static volatile boolean running = true;
 
-    public Crawler(ConnectionSource cs) {
+    private static final String POISON_PILL = new String();
+    private CountDownLatch latch;
+    
+    public Crawler(ConnectionSource cs, CountDownLatch latch) {
         this.connectionSource = cs;
         this.publisherDao = DaoManager.lookupDao(connectionSource, Publisher.class);
         this.recordDao = DaoManager.lookupDao(connectionSource, Record.class);
+        this.latch = latch;
     }
 
     @Override
     public void run() {
-        while (running) {
-            parseAdsTxt();
+        while (PublisherLoaderService.getPublishersToProcessQueue().size() > 0 || !PublisherLoaderService.isDone()) {
+            try {
+                System.out.println("In crawler: " + Thread.currentThread().getName());
+                BlockingQueue<String> queue = PublisherLoaderService.getPublishersToProcessQueue();
+                String targetUrl = queue.take();
+                if (targetUrl == POISON_PILL) { // comparing object not string value
+                    queue.add(POISON_PILL); // for other threads waiting to take()
+                    System.out.println("##### Exiting crawler: " + Thread.currentThread().getName() + " #####");
+                    latch.countDown();
+                    return;
+                }
+                fetch(targetUrl);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
+        System.out.println(Thread.currentThread().getName() + " skipped the while loop");
     }
 
-    /* Parses the ads.txt next in queue */
-    private void parseAdsTxt() {
-        try {
-            //take() makes thread pause and wait until queue has an item
-            // CONSUMER
-            String targetUrl = MainController.getPublishersToProcess().take();
-            fetch(targetUrl);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /* Fetches given url */
+    /* Fetches ads.txt at given url and parses the contents */
     public void fetch(String targetUrl) {
         try {
             // Open URL Connection with proper headers
@@ -121,10 +127,8 @@ public class Crawler implements Runnable {
             return null;
         }
     }
-    
-    /* Forces all running threads to shutdown */
-    public static void shutdown() {
-       running = false;
-   }
 
+    public static String getPill() {
+        return POISON_PILL;
+    }
 }

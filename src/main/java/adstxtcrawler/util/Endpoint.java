@@ -2,9 +2,10 @@ package adstxtcrawler.util;
 
 import adstxtcrawler.models.Publisher;
 import adstxtcrawler.threads.Crawler;
-import adstxtcrawler.threads.PublisherManager;
+import adstxtcrawler.threads.PublisherLoaderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.j256.ormlite.support.ConnectionSource;
+import java.util.concurrent.CountDownLatch;
 import spark.Request;
 import spark.Response;
 import static spark.Spark.get;
@@ -21,7 +22,7 @@ public class Endpoint {
     public void serve(ConnectionSource connectionSource) {
         get(URL_MAPPING, (Request request, Response response) -> {
             // Get a personal crawler thread
-            Crawler crawler = new Crawler(connectionSource);
+            Crawler crawler = new Crawler(connectionSource, new CountDownLatch(1));
 
             String pubName = request.queryParams("name");
             if (pubName != null) {
@@ -30,7 +31,7 @@ public class Endpoint {
 
                 if (publisher != null) {
                     // Check if cache expired before serving
-                    if (PublisherManager.isPublisherExpired(publisher.getExpiresAt())) {
+                    if (PublisherLoaderService.isPublisherExpired(publisher.getExpiresAt())) {
                         System.out.println("The publisher cache for " + publisher.getName() + " has expired. Refetching...");
                         crawler.fetch("https://" + publisher.getName());
                         crawler.run(); // done in same-thread because must wait for new info

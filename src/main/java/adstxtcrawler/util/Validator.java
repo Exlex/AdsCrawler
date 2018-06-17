@@ -30,7 +30,7 @@ public class Validator {
         if (splitRecord.length < 3 || splitRecord.length > 4) {
             return null;
         }
-
+        
         exchange        = splitRecord[0].trim();
         pubId           = splitRecord[1].trim();
         relationship    = splitRecord[2].trim().toUpperCase();
@@ -49,18 +49,18 @@ public class Validator {
 
     private static boolean validateFields(String exchange, String pubId, String relationship) {
         boolean valid = true;
-        if (!validateExchangeDomain(exchange)) {
+        if (!validateExchangeDomain(exchange) || containsWhitespace(exchange)) {
             valid = false;
-        } else if (!validatePublisherId(pubId)) {
+        } else if (!validatePublisherId(pubId) || containsWhitespace(pubId)) {
             valid = false;
-        } else if (!validateRelationship(relationship)) {
+        } else if (!validateRelationship(relationship) || containsWhitespace(relationship)) {
             valid = false;
         }
         return valid;
     }
 
     private static boolean validateFields(String exchange, String pubId, String relationship, String authId) {
-        if (validateFields(exchange, pubId, relationship)) {
+        if (validateFields(exchange, pubId, relationship) || containsWhitespace(authId)) {
             return validateAuthId(authId);
         }
         return false;
@@ -82,4 +82,14 @@ public class Validator {
     private static boolean validateAuthId(String authId) {
         return true;
     }
+    
+    private static boolean containsWhitespace(String str){
+        for(int i = 0; i < str.length(); i++){
+            if(Character.isWhitespace(str.charAt(i))){
+                return true;
+            }
+        }
+        return false;
+    }
+    
 }
