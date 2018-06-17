@@ -1,5 +1,6 @@
 package adstxtcrawler.threads;
 
+import adstxtcrawler.controller.MainController;
 import adstxtcrawler.models.Publisher;
 import adstxtcrawler.models.Record;
 import adstxtcrawler.util.Validator;
@@ -23,20 +24,20 @@ public class Crawler implements Runnable {
 
     private final long WEEK_IN_MS = 86400000 * 7; // DAY_IN_MS * 7
 
-    private final Dao<Record, String> recordDao;
-    private final Dao<Publisher, String> publisherDao;
     private final ConnectionSource connectionSource;
 
+    private static Dao<Record, String> recordDao;
+    private static Dao<Publisher, String> publisherDao;
     private BufferedReader bufferedReader;
 
     private static final String POISON_PILL = new String();
-    private final CountDownLatch latch;
-    
-    public Crawler(ConnectionSource cs, CountDownLatch latch) {
+
+    public Crawler(ConnectionSource cs) {
         this.connectionSource = cs;
-        this.publisherDao = DaoManager.lookupDao(connectionSource, Publisher.class);
-        this.recordDao = DaoManager.lookupDao(connectionSource, Record.class);
-        this.latch = latch;
+        if (recordDao == null || publisherDao == null) {
+            publisherDao = DaoManager.lookupDao(connectionSource, Publisher.class);
+            recordDao = DaoManager.lookupDao(connectionSource, Record.class);
+        }
     }
 
     @Override
@@ -49,7 +50,7 @@ public class Crawler implements Runnable {
                 if (targetUrl == POISON_PILL) { // comparing object not string value
                     queue.add(POISON_PILL); // for other threads waiting to take()
                     //System.out.println("##### Exiting crawler: " + Thread.currentThread().getName() + " #####");
-                    latch.countDown();
+                    MainController.getLatch().countDown();
                     return;
                 }
                 fetch(targetUrl);
@@ -109,7 +110,7 @@ public class Crawler implements Runnable {
     }
 
     /* Searches DB for the Publisher object by name */
-    public Publisher findPublisher(String pubName) {
+    public static synchronized Publisher findPublisher(String pubName) {
         try {
 
             QueryBuilder<Publisher, String> queryBuilder = publisherDao.queryBuilder();

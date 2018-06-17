@@ -22,7 +22,7 @@ public class Endpoint {
     public void serve(ConnectionSource connectionSource) {
         get(URL_MAPPING, (Request request, Response response) -> {
             // Get a personal crawler thread
-            Crawler crawler = new Crawler(connectionSource, new CountDownLatch(1));
+            Crawler crawler = new Crawler(connectionSource);
 
             String pubName = request.queryParams("name");
             if (pubName != null) {

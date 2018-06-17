@@ -55,20 +55,17 @@ public class PublisherLoaderService implements Runnable {
                     line = line.trim();
                     if (urlValidator.isValid(line)) {
                         // PRODUCER
-                        if (publishersToProcess.offer(line, SECONDS_TO_WAIT_BETWEEN_ATTEMPTS, TimeUnit.SECONDS)) {
-                            System.out.println("Added: " + line);;
-                        } else {
-                            // else we block until we can add (queue is backed up, longer than 15 second wait time)
+                        if (!publishersToProcess.offer(line, SECONDS_TO_WAIT_BETWEEN_ATTEMPTS, TimeUnit.SECONDS)) {
+                            // else we block until we can add
                             publishersToProcess.put(line);
                         }
+                        System.out.println("Added: " + line);
                         publisherCount++;
                     }
                 }
             }
-            if (publisherCount > 0) {
-                System.out.println("### PUBLISHER DONE, ADDING POISON PILL ###");
-                publishersToProcess.put(Crawler.getPill());
-            }
+            System.out.println("### PUBLISHER DONE, ADDING POISON PILL ###");
+            publishersToProcess.put(Crawler.getPill());
             bufferedReader.close();
         } catch (IOException e) {
             e.printStackTrace();
