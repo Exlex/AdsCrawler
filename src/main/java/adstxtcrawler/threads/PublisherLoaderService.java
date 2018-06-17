@@ -35,7 +35,7 @@ public class PublisherLoaderService implements Runnable {
         try {
             loadPublishers();
         } catch (InterruptedException e) {
-            System.out.println("PublisherLoader thread was interrupted");
+            System.out.println("PublisherLoaderService thread was interrupted");
             e.printStackTrace();
         }
         done = true;
@@ -43,13 +43,12 @@ public class PublisherLoaderService implements Runnable {
 
     /* Reads in a list of publishers from resources/publishers.txt into Queue*/
     private void loadPublishers() throws InterruptedException {
-        System.out.println("We in loadPublishers() with Thread: " + Thread.currentThread().getId() + " : " + Thread.currentThread().getName());
+        //System.out.println("We in loadPublishers() with Thread: " + Thread.currentThread().getId() + " : " + Thread.currentThread().getName());
         UrlValidator urlValidator = new UrlValidator();
-        boolean lineIsUrl = false;
         try {
             File publishersFile = new File(PUBLISHERS_PATH);
             bufferedReader = new BufferedReader(new FileReader(publishersFile));
-            String line = "";
+            String line;
 
             while ((line = bufferedReader.readLine()) != null) {
                 if (line != null) {
@@ -67,7 +66,7 @@ public class PublisherLoaderService implements Runnable {
                 }
             }
             if (publisherCount > 0) {
-                System.out.println("### PUBLISHER DONE, ADDING PILL ###");
+                System.out.println("### PUBLISHER DONE, ADDING POISON PILL ###");
                 publishersToProcess.put(Crawler.getPill());
             }
             bufferedReader.close();

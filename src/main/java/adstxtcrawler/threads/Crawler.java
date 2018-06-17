@@ -30,7 +30,7 @@ public class Crawler implements Runnable {
     private BufferedReader bufferedReader;
 
     private static final String POISON_PILL = new String();
-    private CountDownLatch latch;
+    private final CountDownLatch latch;
     
     public Crawler(ConnectionSource cs, CountDownLatch latch) {
         this.connectionSource = cs;
@@ -43,12 +43,12 @@ public class Crawler implements Runnable {
     public void run() {
         while (PublisherLoaderService.getPublishersToProcessQueue().size() > 0 || !PublisherLoaderService.isDone()) {
             try {
-                System.out.println("In crawler: " + Thread.currentThread().getName());
+                //System.out.println("In crawler: " + Thread.currentThread().getName());
                 BlockingQueue<String> queue = PublisherLoaderService.getPublishersToProcessQueue();
                 String targetUrl = queue.take();
                 if (targetUrl == POISON_PILL) { // comparing object not string value
                     queue.add(POISON_PILL); // for other threads waiting to take()
-                    System.out.println("##### Exiting crawler: " + Thread.currentThread().getName() + " #####");
+                    //System.out.println("##### Exiting crawler: " + Thread.currentThread().getName() + " #####");
                     latch.countDown();
                     return;
                 }
@@ -57,7 +57,6 @@ public class Crawler implements Runnable {
                 e.printStackTrace();
             }
         }
-        System.out.println(Thread.currentThread().getName() + " skipped the while loop");
     }
 
     /* Fetches ads.txt at given url and parses the contents */
