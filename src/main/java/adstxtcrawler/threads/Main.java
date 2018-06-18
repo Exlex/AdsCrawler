@@ -1,10 +1,8 @@
 package adstxtcrawler.threads;
 
 import adstxtcrawler.models.Publisher;
-import adstxtcrawler.threads.Crawler;
 import adstxtcrawler.models.Record;
 import adstxtcrawler.util.Endpoint;
-import adstxtcrawler.threads.PublisherLoaderService;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcPooledConnectionSource;
 import com.j256.ormlite.support.ConnectionSource;
@@ -20,24 +18,24 @@ public class Main {
     private static final String DATABASE_URL = "jdbc:h2:./src/main/resources/storage";
     private static final String DB_USER = "admin";
     private static final String DB_PW = "";
-    private static final int MAX_CRAWLER_THREADS = 5;
+    private static final int MAX_CRAWLER_THREADS = 10;
 
     private static ConnectionSource connectionSource;
     private static CountDownLatch latch;
 
     public static void main(String[] args) {
-        long startTime = System.currentTimeMillis();
         initDb();
         PublisherLoaderService publisherLoaderService = new PublisherLoaderService(connectionSource);
 
         ExecutorService publisherExecutor = Executors.newSingleThreadExecutor();
         ExecutorService crawlerExecutor = Executors.newFixedThreadPool(MAX_CRAWLER_THREADS);
         latch = new CountDownLatch(MAX_CRAWLER_THREADS);
-
+        
+        long startTime = System.currentTimeMillis();
+        
         // Start threads
         initThreads(crawlerExecutor);
         publisherExecutor.submit(publisherLoaderService);
-
         // Wait until tasks are done and quit.
         publisherExecutor.shutdown();
         gracefulShutdown(crawlerExecutor);

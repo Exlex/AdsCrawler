@@ -5,7 +5,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Date;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -17,16 +16,20 @@ public class PublisherLoaderService implements Runnable {
     private static final int QUEUE_MAX_SIZE = 100;
     private static final int SECONDS_TO_WAIT_BETWEEN_ATTEMPTS = 15;
     private static BlockingQueue<String> publishersToProcess;
+    private static UrlValidator urlValidator;
 
     private static BufferedReader bufferedReader;
     private static volatile boolean done;
-    private long publisherCount;
+    private static long publisherCount;
 
     public PublisherLoaderService(ConnectionSource connectionSource) {
         done = false;
-        this.publisherCount = 0;
+        publisherCount = 0;
         if (publishersToProcess == null) {
             publishersToProcess = new LinkedBlockingDeque<>(QUEUE_MAX_SIZE);
+        }
+        if (urlValidator == null) {
+            urlValidator = new UrlValidator();
         }
     }
 
@@ -44,40 +47,37 @@ public class PublisherLoaderService implements Runnable {
     /* Reads in a list of publishers from resources/publishers.txt into Queue*/
     private void loadPublishers() throws InterruptedException {
         //System.out.println("We in loadPublishers() with Thread: " + Thread.currentThread().getId() + " : " + Thread.currentThread().getName());
-        UrlValidator urlValidator = new UrlValidator();
         try {
             File publishersFile = new File(PUBLISHERS_PATH);
             bufferedReader = new BufferedReader(new FileReader(publishersFile));
             String line;
 
             while ((line = bufferedReader.readLine()) != null) {
-                if (line != null) {
-                    line = line.trim();
-                    if (urlValidator.isValid(line)) {
-                        // PRODUCER
-                        if (!publishersToProcess.offer(line, SECONDS_TO_WAIT_BETWEEN_ATTEMPTS, TimeUnit.SECONDS)) {
-                            // else we block until we can add
-                            publishersToProcess.put(line);
-                        }
-                        System.out.println("Added: " + line);
-                        publisherCount++;
-                    }
-                }
+                parseLine(line);
             }
+
             System.out.println("### PUBLISHER LOADING COMPLETE, ADDING POISON PILL ###");
             publishersToProcess.put(Crawler.getPill());
             bufferedReader.close();
         } catch (IOException e) {
+            System.out.println("Error reading in publishers.txt");
             e.printStackTrace();
         }
     }
 
-    /* Helper method for endpoint*/
-    public static boolean isPublisherExpired(long pubExpTime) {
-        Date now = new Date();
-        System.out.println("Now its: " + now
-                + "\nExpires at: " + new Date(pubExpTime));
-        return now.getTime() > pubExpTime;
+    private static void parseLine(String line) throws InterruptedException {
+        if (line != null) {
+            line = line.trim();
+            if (urlValidator.isValid(line)) {
+                // PRODUCER
+                if (!publishersToProcess.offer(line, SECONDS_TO_WAIT_BETWEEN_ATTEMPTS, TimeUnit.SECONDS)) {
+                    // else we block until we can add
+                    publishersToProcess.put(line);
+                }
+                System.out.println("Added: " + line);
+                publisherCount++;
+            }
+        }
     }
 
     /* GETTERS AND SETTERS */

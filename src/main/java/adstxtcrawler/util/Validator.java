@@ -5,7 +5,6 @@ import adstxtcrawler.models.Record;
 import org.apache.commons.validator.routines.UrlValidator;
 
 public class Validator {
-
     public static Record validateRecord(Publisher pub, String r) {
         String recordString, exchange, pubId, relationship, authId;
         String[] splitRecord;
@@ -30,10 +29,10 @@ public class Validator {
         if (splitRecord.length < 3 || splitRecord.length > 4) {
             return null;
         }
-        
-        exchange        = splitRecord[0].trim();
-        pubId           = splitRecord[1].trim();
-        relationship    = splitRecord[2].trim().toUpperCase();
+
+        exchange = splitRecord[0].trim();
+        pubId = splitRecord[1].trim();
+        relationship = splitRecord[2].trim().toUpperCase();
         if (splitRecord.length == 4) {
             authId = splitRecord[3].trim();
             if (validateFields(exchange, pubId, relationship, authId)) {
@@ -61,7 +60,7 @@ public class Validator {
 
     private static boolean validateFields(String exchange, String pubId, String relationship, String authId) {
         if (validateFields(exchange, pubId, relationship) || containsWhitespace(authId)) {
-            return validateAuthId(authId);
+            return validateAuthId(authId) && !containsWhitespace(authId);
         }
         return false;
     }
@@ -82,14 +81,14 @@ public class Validator {
     private static boolean validateAuthId(String authId) {
         return true;
     }
-    
-    private static boolean containsWhitespace(String str){
-        for(int i = 0; i < str.length(); i++){
-            if(Character.isWhitespace(str.charAt(i))){
+
+    private static boolean containsWhitespace(String str) {
+        for (int i = 0; i < str.length(); i++) {
+            if (Character.isWhitespace(str.charAt(i))) {
                 return true;
             }
         }
         return false;
     }
-    
+
 }

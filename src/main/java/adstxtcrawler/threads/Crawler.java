@@ -11,6 +11,7 @@ import com.j256.ormlite.support.ConnectionSource;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.sql.SQLException;
@@ -59,27 +60,27 @@ public class Crawler implements Runnable {
     /* Fetches ads.txt at given url and parses the contents */
     public void fetch(String targetUrl) {
         try {
-            // Open URL Connection with proper headers
             URL url = new URL(targetUrl);
-            URLConnection connection = url.openConnection();
-            connection.setRequestProperty("Accept", "text/plain");
-
+            URLConnection connection = getPublisherConnection(url);
+            connection.connect();
+            
             // Cache time calculation
-            long expires = connection.getExpiration();
-            if (expires == 0) {  // expires header missing, default 7 days
-                expires = new Date().getTime() + WEEK_IN_MS;
-            }
+            long expires = getExpires(connection);
 
-            // See if publisher already exists in DB (for cache purposes)
-            String pubName = getHostName(url.getHost());
-            Publisher pub = findPublisher(pubName);
-            if (pub == null) {
-                pub = new Publisher(pubName);
-                pub.setExpiresAt(expires);
-                publisherDao.create(pub);
-            } else {
-                pub.setExpiresAt(expires);
-                publisherDao.update(pub);
+            Publisher pub;
+            String pubName;
+            // fixes bug where if publishers.txt has repeated publishers it will access same resource
+            synchronized (Publisher.class) {
+                pubName = getHostName(url.getHost());
+                pub = findPublisher(pubName);   // See if publisher already exists in DB (for cache purposes)
+                if (pub == null) {
+                    pub = new Publisher(pubName);
+                    pub.setExpiresAt(expires);
+                    publisherDao.create(pub);
+                } else {
+                    pub.setExpiresAt(expires);
+                    publisherDao.update(pub);
+                }
             }
             System.out.println("Added: " + pubName + " expires at: " + new Date(pub.getExpiresAt()));
 
@@ -106,7 +107,7 @@ public class Crawler implements Runnable {
     }
 
     /* Searches DB for the Publisher object by name */
-    public static synchronized Publisher findPublisher(String pubName) {
+    public static Publisher findPublisher(String pubName) {
         try {
 
             QueryBuilder<Publisher, String> queryBuilder = publisherDao.queryBuilder();
@@ -126,5 +127,28 @@ public class Crawler implements Runnable {
 
     public static String getPill() {
         return POISON_PILL;
+    }
+
+    private URLConnection getPublisherConnection(URL url) {
+        URLConnection connection = null;
+        try {
+            // Open URL Connection with proper headers
+            connection = url.openConnection();
+            connection.setDefaultUseCaches(false);
+            connection.setRequestProperty("Accept", "text/plain");
+        } catch (MalformedURLException e) {
+            System.out.println("Invalid publisher URL: " + url);
+        } catch (IOException e) {
+            System.out.println("Couldn't establish connection");
+        }
+        return connection;
+    }
+
+    private long getExpires(URLConnection connection) {
+        long expires = connection.getExpiration();
+        if (expires == 0) {  // expires header missing, default 7 days
+            expires = new Date().getTime() + WEEK_IN_MS;
+        }
+        return expires;
     }
 }
