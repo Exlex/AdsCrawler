@@ -1,7 +1,7 @@
-package adstxtcrawler.util;
 
 import adstxtcrawler.models.Publisher;
 import adstxtcrawler.models.Record;
+import adstxtcrawler.util.Validator;
 import org.junit.Assert;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -47,24 +47,27 @@ public class ValidatorTest {
         System.out.println("Running: testBadRecordValidation");
         String badRecordString;
         Record record;
-        
+
         badRecordString = "tremorhub, ug5m3, DIRECT, 1a4e959a1b50034a";
         record = Validator.validateRecord(pub, badRecordString);
         assertNull(record);
-        
+
         badRecordString = "tremorhub.com, ug4512s,, DIRECT, 1a4e959a1b50034a";
         record = Validator.validateRecord(pub, badRecordString);
         assertNull(record);
-        
+
         badRecordString = "tremorhub.com, ug45\t12s,, DIRE\nCT, 1a4e959a1b50034a";
         record = Validator.validateRecord(pub, badRecordString);
         assertNull(record);
-        
+
         badRecordString = "MA#LF,O#RM,ED STRI,NG 5125125 ASFF, , , ASFAS SAFASF ,";
         record = Validator.validateRecord(pub, badRecordString);
         assertNull(record);
+
+        badRecordString = "                <link href=\"https://assets.bwbx.io/font-service/css/Bloomberg%20Logotypes-Medium,BWHaasGrotesk-75Bold-Web,BWHaasGrotesk-95Black-Web,BWHaasGrotesk-55Roman-Web/font-face.css\" rel=\"stylesheet\"><link href=\"https://assets.bwbx.io/s3/navi/css/components/masthead/masthead-0761216a2c.css\" rel=\"stylesheet\"><link href=\"https://assets.bwbx.io/s3/navi/vendor/css/reg-ui-client-162e0da6e2.css\" rel=\"stylesheet\"><link href=\"https://assets.bwbx.io/s3/navi/css/components/dataStrip/dataStrip-19f5dbcc09.css\" rel=\"stylesheet\"><noscript><style>.noscript-hide{display:none;}</style></noscript>\n";
+        record = Validator.validateRecord(pub, badRecordString);
+        assertNull(record);
+
     }
-    
-    
 
 }
